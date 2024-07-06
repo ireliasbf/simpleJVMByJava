@@ -1,5 +1,6 @@
 import org.jetbrains.annotations.NotNull;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,24 +30,30 @@ public class JavaVirtualMachine {
     };
 
     static int pc = 0;
-    static int[] Opcodes = {0x10, 0x0A, 0x3C, 0x10, 0x14, 0x3D, 0x1B, 0x1C, 0x60, 0x3E, 0x1D, 0x10,
+    static int[] Main_1 = {0x10, 0x0A, 0x3C, 0x10, 0x14, 0x3D, 0x1B, 0x1C, 0x60, 0x3E, 0x1D, 0x10,
             0x0A, 0xA1, 0x00, 0x0A, 0x10, 0x0A, 0x36, 0x08, 0xA7, 0x00, 0x07, 0x10, 0x0A,
             0x36, 0x08, 0x1D, 0x9E, 0x00, 0x16, 0x10, 0x14, 0x36, 0x08, 0x1D, 0x04, 0x64,
             0x3E, 0x1D, 0x08, 0xA0, 0x00, 0x06, 0xA7, 0x00, 0x06, 0xA7, 0xFF, 0xEC, 0x12,
             0x02, 0x36, 0x05, 0x11, 0x03, 0xE8, 0x36, 0x06, 0xB1
     };
-    static Frame frame=new Frame(100,100,100);
-    static int print=0;
+
+    static int[] Opcodes;
+    static Frame frame = new Frame(100, 100);
+    static MethodArea methodArea = new MethodArea();
+    static Heap heap = new Heap(100);
+    static MyClass myClass = new MyClass("Main", 100, 100);
+
+    static int print = 0;
 
 
     static int fetch() {
-        if(print>0)
-            System.out.print(" "+Opcodes[pc]);
+        if (print > 0)
+            System.out.print(" " + Opcodes[pc]);
         print++;
         return Opcodes[pc++];
     }
-    
-    static int getOffset(){
+
+    static int getOffset() {
         int bite_1 = fetch();
         int bite_2 = fetch();
         int combined = (bite_1 << 8) | bite_2;
@@ -59,602 +66,543 @@ public class JavaVirtualMachine {
         }
         return offset;
     }
-    
-    public enum Instructions{
-        Nop{
+
+    public enum Instructions {
+        Nop {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 // do nothing
             }
         },
-        Aconst_null{
+        Aconst_null {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(null);
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(null);
             }
         },
-        Iconst_m1{
+        Iconst_m1 {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(-1);
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(-1);
             }
         },
-        Iconst_0{
+        Iconst_0 {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(0);
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(0);
             }
         },
-        Iconst_1{
+        Iconst_1 {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(1);
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(1);
             }
         },
-        Iconst_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(2);
+        Iconst_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(2);
             }
         },
-        Iconst_3{
+        Iconst_3 {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(3);
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(3);
             }
         },
-        Iconst_4{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(4);
+        Iconst_4 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(4);
             }
         },
-        Iconst_5{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(5);
+        Iconst_5 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(5);
             }
         },
-        Lconst_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(0L);
+        Lconst_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(0L);
             }
         },
-        Lconst_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(1L);
+        Lconst_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(1L);
             }
         },
-        Fconst_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(0.0f);
+        Fconst_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(0.0f);
             }
         },
-        Fconst_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(1.0f);
+        Fconst_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(1.0f);
             }
         },
-        Fconst_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(2.0f);
+        Fconst_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(2.0f);
             }
         },
-        Dconst_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(0.0);
+        Dconst_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(0.0);
             }
         },
-        Dconst_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(1.0);
+        Dconst_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(1.0);
             }
         },
-        Bipush{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(fetch());
+        Bipush {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(fetch());
             }
         },
-        Sipush{
+        Sipush {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int bite_1 = fetch();
                 int bite_2 = fetch();
                 int combined = (bite_1 << 8) | bite_2;
                 frame.pushOperandStack(combined);
             }
         },
-        Ldc{
+        Ldc {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getConstant(fetch()));
+            public void execute(@NotNull MyClass myClass) {
+                frame.pushOperandStack(myClass.getConstant(fetch()));
             }
         },
-        Ldc_w{
+        Ldc_w {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getConstant(fetch()));
+            public void execute(@NotNull MyClass myClass) {
+                frame.pushOperandStack(myClass.getConstant(fetch()));
             }
         },
-        Ldc2_w{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getConstant(fetch()));
+        Ldc2_w {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(myClass.getConstant(fetch()));
             }
         },
-        Iload{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(fetch()));
+        Iload {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
             }
         },
-        Lload{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(fetch()));
+        Lload {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
             }
         },
-        Fload{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(fetch()));
+        Fload {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
             }
         },
-        Dload{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(fetch()));
+        Dload {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
             }
         },
-        Aload{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(fetch()));
+        Aload {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
             }
         },
-        Iload_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(0));
+        Iload_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
             }
         },
-        Iload_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(1));
+        Iload_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
             }
         },
-        Iload_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(2));
+        Iload_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
             }
         },
-        Iload_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(3));
+        Iload_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
             }
         },
-        Lload_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(0));
+        Lload_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
             }
         },
-        Lload_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(1));
+        Lload_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
             }
         },
-        Lload_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(2));
+        Lload_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
             }
         },
-        Lload_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(3));
+        Lload_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
             }
         },
-        Fload_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(0));
+        Fload_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
             }
         },
-        Fload_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(1));
+        Fload_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
             }
         },
-        Fload_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(2));
+        Fload_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
             }
         },
-        Fload_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(3));
+        Fload_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
             }
         },
-        Dload_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(0));
+        Dload_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
             }
         },
-        Dload_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(1));
+        Dload_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
             }
         },
-        Dload_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(2));
+        Dload_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
             }
         },
-        Dload_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(3));
+        Dload_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
             }
         },
-        Aload_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(0));
+        Aload_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
             }
         },
-        Aload_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(1));
+        Aload_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
             }
         },
-        Aload_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(2));
+        Aload_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
             }
         },
-        Aload_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(frame.getLocal(3));
+        Aload_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
             }
         },
-        Iaload{
+        Iaload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 int[] array = (int[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Laload{
+        Laload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 long[] array = (long[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Faload{
+        Faload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 float[] array = (float[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Daload{
+        Daload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 double[] array = (double[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Aaload{
+        Aaload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 Object[] array = (Object[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Baload{
+        Baload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 byte[] array = (byte[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Caload{
+        Caload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 char[] array = (char[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Saload{
+        Saload {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = (int) frame.popOperandStack();
                 short[] array = (short[]) frame.popOperandStack();
                 frame.pushOperandStack(array[index]);
             }
         },
-        Istore{
+        Istore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
                 frame.setLocal(index, frame.popOperandStack());
             }
         },
-        Lstore{
+        Lstore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
                 frame.setLocal(index, frame.popOperandStack());
             }
         },
-        Fstore{
+        Fstore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
                 frame.setLocal(index, frame.popOperandStack());
             }
         },
-        Dstore{
+        Dstore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
                 frame.setLocal(index, frame.popOperandStack());
             }
         },
-        Astore{
+        Astore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
                 frame.setLocal(index, frame.popOperandStack());
             }
         },
-        Istore_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(0, frame.popOperandStack());
+        Istore_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(0, frame.popOperandStack());
             }
         },
-        Istore_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(1, frame.popOperandStack());
+        Istore_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(1, frame.popOperandStack());
             }
         },
-        Istore_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(2, frame.popOperandStack());
+        Istore_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(2, frame.popOperandStack());
             }
         },
-        Istore_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(3, frame.popOperandStack());
+        Istore_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(3, frame.popOperandStack());
             }
         },
-        Lstore_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(0, frame.popOperandStack());
+        Lstore_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(0, frame.popOperandStack());
             }
         },
-        Lstore_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(1, frame.popOperandStack());
+        Lstore_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(1, frame.popOperandStack());
             }
         },
-        Lstore_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(2, frame.popOperandStack());
+        Lstore_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(2, frame.popOperandStack());
             }
         },
-        Lstore_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(3, frame.popOperandStack());
+        Lstore_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(3, frame.popOperandStack());
             }
         },
-        Fstore_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(0, frame.popOperandStack());
+        Fstore_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(0, frame.popOperandStack());
             }
         },
-        Fstore_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(1, frame.popOperandStack());
+        Fstore_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(1, frame.popOperandStack());
             }
         },
-        Fstore_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(2, frame.popOperandStack());
+        Fstore_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(2, frame.popOperandStack());
             }
         },
-        Fstore_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(3, frame.popOperandStack());
+        Fstore_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(3, frame.popOperandStack());
             }
         },
-        Dstore_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(0, frame.popOperandStack());
+        Dstore_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(0, frame.popOperandStack());
             }
         },
-        Dstore_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(1, frame.popOperandStack());
+        Dstore_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(1, frame.popOperandStack());
             }
         },
-        Dstore_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(2, frame.popOperandStack());
+        Dstore_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(2, frame.popOperandStack());
             }
         },
-        Dstore_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(3, frame.popOperandStack());
+        Dstore_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(3, frame.popOperandStack());
             }
         },
-        Astore_0{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(0, frame.popOperandStack());
+        Astore_0 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(0, frame.popOperandStack());
             }
         },
-        Astore_1{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(1, frame.popOperandStack());
+        Astore_1 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(1, frame.popOperandStack());
             }
         },
-        Astore_2{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(2, frame.popOperandStack());
+        Astore_2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(2, frame.popOperandStack());
             }
         },
-        Astore_3{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.setLocal(3, frame.popOperandStack());
+        Astore_3 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().setLocal(3, frame.popOperandStack());
             }
         },
-        Iastore{
+        Iastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value = (int) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 int[] array = (int[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Lastore{
+        Lastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value = (long) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 long[] array = (long[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Fastore{
+        Fastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value = (float) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 float[] array = (float[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Dastore{
+        Dastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value = (double) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 double[] array = (double[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Aastore{
+        Aastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value = frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 Object[] array = (Object[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Bastore{
+        Bastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 byte value = (byte) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 byte[] array = (byte[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Castore{
+        Castore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 char value = (char) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 char[] array = (char[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Sastore{
+        Sastore {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 short value = (short) frame.popOperandStack();
                 int index = (int) frame.popOperandStack();
                 short[] array = (short[]) frame.popOperandStack();
                 array[index] = value;
             }
         },
-        Pop{
-            @Override
-            public void execute(@NotNull Frame frame) {
+        Pop {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().popOperandStack();
+            }
+        },
+        Pop2 {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().popOperandStack();
                 frame.popOperandStack();
             }
         },
-        Pop2{
+        Dup {
             @Override
-            public void execute(@NotNull Frame frame) {
-                frame.popOperandStack();
-                frame.popOperandStack();
-            }
-        },
-        Dup{
-            @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value = frame.popOperandStack();
                 frame.pushOperandStack(value);
                 frame.pushOperandStack(value);
             }
         },
-        Dup_X1{
+        Dup_X1 {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 frame.pushOperandStack(value1);
@@ -662,9 +610,9 @@ public class JavaVirtualMachine {
                 frame.pushOperandStack(value1);
             }
         },
-        Dup_X2{
+        Dup_X2 {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 Object value3 = frame.popOperandStack();
@@ -674,9 +622,9 @@ public class JavaVirtualMachine {
                 frame.pushOperandStack(value1);
             }
         },
-        Dup2{
+        Dup2 {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 frame.pushOperandStack(value2);
@@ -685,9 +633,9 @@ public class JavaVirtualMachine {
                 frame.pushOperandStack(value1);
             }
         },
-        Dup2_X1{
+        Dup2_X1 {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 Object value3 = frame.popOperandStack();
@@ -698,9 +646,9 @@ public class JavaVirtualMachine {
                 frame.pushOperandStack(value1);
             }
         },
-        Dup2_X2{
+        Dup2_X2 {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 Object value3 = frame.popOperandStack();
@@ -713,400 +661,385 @@ public class JavaVirtualMachine {
                 frame.pushOperandStack(value1);
             }
         },
-        Swap{
+        Swap {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 frame.pushOperandStack(value1);
                 frame.pushOperandStack(value2);
             }
         },
-        Iadd{
+        Iadd {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 + value2);
             }
         },
-        Ladd{
+        Ladd {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 + value2);
             }
         },
-        Fadd{
+        Fadd {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 frame.pushOperandStack(value1 + value2);
             }
         },
-        Dadd{
+        Dadd {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 frame.pushOperandStack(value1 + value2);
             }
         },
-        Isub{
+        Isub {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 - value2);
             }
         },
-        Lsub{
+        Lsub {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 - value2);
             }
         },
-        Fsub{
+        Fsub {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 frame.pushOperandStack(value1 - value2);
             }
         },
-        Dsub{
+        Dsub {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 frame.pushOperandStack(value1 - value2);
             }
         },
-        Imul{
+        Imul {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 * value2);
             }
         },
-        Lmul{
+        Lmul {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 * value2);
             }
         },
-        Fmul{
+        Fmul {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 frame.pushOperandStack(value1 * value2);
             }
         },
-        Dmul{
+        Dmul {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 frame.pushOperandStack(value1 * value2);
             }
         },
-        Idiv{
+        Idiv {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 / value2);
             }
         },
-        Ldiv{
+        Ldiv {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 / value2);
             }
         },
-        Fdiv{
+        Fdiv {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 frame.pushOperandStack(value1 / value2);
             }
         },
-        Ddiv{
+        Ddiv {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 frame.pushOperandStack(value1 / value2);
             }
         },
-        Irem{
+        Irem {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 % value2);
             }
         },
-        Lrem{
+        Lrem {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 % value2);
             }
         },
-        Frem{
+        Frem {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 frame.pushOperandStack(value1 % value2);
             }
         },
-        Drem{
+        Drem {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 frame.pushOperandStack(value1 % value2);
             }
         },
-        Ineg{
+        Ineg {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value = (int) frame.popOperandStack();
                 frame.pushOperandStack(-value);
             }
         },
-        Lneg{
+        Lneg {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value = (long) frame.popOperandStack();
                 frame.pushOperandStack(-value);
             }
         },
-        Fneg{
+        Fneg {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value = (float) frame.popOperandStack();
                 frame.pushOperandStack(-value);
             }
         },
-        Dneg{
+        Dneg {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value = (double) frame.popOperandStack();
                 frame.pushOperandStack(-value);
             }
         },
-        Ishl{
+        Ishl {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 << value2);
             }
         },
-        Lshl{
+        Lshl {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 << value2);
             }
         },
-        Ishr{
+        Ishr {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 >> value2);
             }
         },
-        Lshr{
+        Lshr {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 >> value2);
             }
         },
-        Iushr{
+        Iushr {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 >>> value2);
             }
         },
-        Lushr{
+        Lushr {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 >>> value2);
             }
         },
-        Iand{
+        Iand {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 & value2);
             }
         },
-        Land{
+        Land {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 & value2);
             }
         },
-        Ior{
+        Ior {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 | value2);
             }
         },
-        Lor{
+        Lor {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 | value2);
             }
         },
-        Ixor{
+        Ixor {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 frame.pushOperandStack(value1 ^ value2);
             }
         },
-        Lxor{
+        Lxor {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 frame.pushOperandStack(value1 ^ value2);
             }
         },
-        Iinc{
+        Iinc {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
                 int value = fetch();
                 frame.setLocal(index, (int) frame.getLocal(index) + value);
             }
         },
-        I2l{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((long) (int) frame.popOperandStack());
+        I2l {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((long) (int) frame.popOperandStack());
             }
         },
-        I2f{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((float) (int) frame.popOperandStack());
+        I2f {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((float) (int) frame.popOperandStack());
             }
         },
-        I2d{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((double) (int) frame.popOperandStack());
+        I2d {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((double) (int) frame.popOperandStack());
             }
         },
-        L2i{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((int) (long) frame.popOperandStack());
+        L2i {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((int) (long) frame.popOperandStack());
             }
         },
-        L2f{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((float) (long) frame.popOperandStack());
+        L2f {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((float) (long) frame.popOperandStack());
             }
         },
-        L2d{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((double) (long) frame.popOperandStack());
+        L2d {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((double) (long) frame.popOperandStack());
             }
         },
-        F2i{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((int) (float) frame.popOperandStack());
+        F2i {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((int) (float) frame.popOperandStack());
             }
         },
-        F2l{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((long) (float) frame.popOperandStack());
+        F2l {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((long) (float) frame.popOperandStack());
             }
         },
-        F2d{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((double) (float) frame.popOperandStack());
+        F2d {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((double) (float) frame.popOperandStack());
             }
         },
-        D2i{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((int) (double) frame.popOperandStack());
+        D2i {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((int) (double) frame.popOperandStack());
             }
         },
-        D2l{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((long) (double) frame.popOperandStack());
+        D2l {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((long) (double) frame.popOperandStack());
             }
         },
-        D2f{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((float) (double) frame.popOperandStack());
+        D2f {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((float) (double) frame.popOperandStack());
             }
         },
-        I2b{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((byte) (int) frame.popOperandStack());
+        I2b {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((byte) (int) frame.popOperandStack());
             }
         },
-        I2c{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((char) (int) frame.popOperandStack());
+        I2c {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((char) (int) frame.popOperandStack());
             }
         },
-        I2s{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack((short) (int) frame.popOperandStack());
+        I2s {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack((short) (int) frame.popOperandStack());
             }
         },
-        Lcmp{
+        Lcmp {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 long value1 = (long) frame.popOperandStack();
                 long value2 = (long) frame.popOperandStack();
                 if (value1 > value2) {
@@ -1118,9 +1051,9 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Fcmpl{
+        Fcmpl {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 if (value1 > value2) {
@@ -1132,9 +1065,9 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Fcmpg{
+        Fcmpg {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 float value1 = (float) frame.popOperandStack();
                 float value2 = (float) frame.popOperandStack();
                 if (value1 > value2) {
@@ -1146,9 +1079,9 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Dcmpl{
+        Dcmpl {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 if (value1 > value2) {
@@ -1160,9 +1093,9 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Dcmpg{
+        Dcmpg {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 double value1 = (double) frame.popOperandStack();
                 double value2 = (double) frame.popOperandStack();
                 if (value1 > value2) {
@@ -1174,70 +1107,70 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Ifeq{
+        Ifeq {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value = (int) frame.popOperandStack();
                 if (value == 0) {
                     pc += offset - 3;
                 }
             }
         },
-        Ifne{
+        Ifne {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value = (int) frame.popOperandStack();
                 if (value != 0) {
                     pc += offset - 3;
                 }
             }
         },
-        Iflt{
+        Iflt {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value = (int) frame.popOperandStack();
                 if (value < 0) {
                     pc += offset - 3;
                 }
             }
         },
-        Ifge{
+        Ifge {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value = (int) frame.popOperandStack();
                 if (value >= 0) {
                     pc += offset - 3;
                 }
             }
         },
-        Ifgt{
+        Ifgt {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value = (int) frame.popOperandStack();
                 if (value > 0) {
                     pc += offset - 3;
                 }
             }
         },
-        Ifle{
+        Ifle {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value = (int) frame.popOperandStack();
                 if (value <= 0) {
                     pc += offset - 3;
                 }
             }
         },
-        If_icmpeq{
+        If_icmpeq {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 if (value1 == value2) {
@@ -1245,10 +1178,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_icmpne{
+        If_icmpne {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 if (value1 != value2) {
@@ -1256,10 +1189,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_icmplt{
+        If_icmplt {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 if (value1 < value2) {
@@ -1267,10 +1200,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_icmpge{
+        If_icmpge {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 if (value1 >= value2) {
@@ -1278,10 +1211,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_icmpgt{
+        If_icmpgt {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 if (value1 > value2) {
@@ -1289,10 +1222,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_icmple{
+        If_icmple {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 int value1 = (int) frame.popOperandStack();
                 int value2 = (int) frame.popOperandStack();
                 if (value1 <= value2) {
@@ -1300,10 +1233,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_acmpeq{
+        If_acmpeq {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 if (value1 == value2) {
@@ -1311,10 +1244,10 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        If_acmpne{
+        If_acmpne {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 Object value1 = frame.popOperandStack();
                 Object value2 = frame.popOperandStack();
                 if (value1 != value2) {
@@ -1322,29 +1255,28 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Goto{
+        Goto {
             @Override
-            public void execute(@NotNull Frame frame) {
-                int offset=getOffset();
+            public void execute(@NotNull MyClass myClass) {
+                int offset = getOffset();
                 pc += offset - 3;
             }
         },
-        Jsr{
-            @Override
-            public void execute(@NotNull Frame frame) {
-                frame.pushOperandStack(pc);
+        Jsr {
+            public void execute(@NotNull MyClass myClass) {
+                myClass.currentFrame().pushOperandStack(pc);
                 pc += fetch();
             }
         },
-        Ret{
+        Ret {
             @Override
-            public void execute(@NotNull Frame frame) {
-                pc = (int)frame.getLocal(fetch());
+            public void execute(@NotNull MyClass myClass) {
+                pc = (int) frame.getLocal(fetch());
             }
         },
-        Tableswitch{
+        Tableswitch {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = pc;
                 while (index % 4 != 0) {
                     index++;
@@ -1364,9 +1296,9 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Lookupswitch{
+        Lookupswitch {
             @Override
-            public void execute(@NotNull Frame frame) {
+            public void execute(@NotNull MyClass myClass) {
                 int index = pc;
                 while (index % 4 != 0) {
                     index++;
@@ -1387,201 +1319,247 @@ public class JavaVirtualMachine {
                 }
             }
         },
-        Ireturn{
+        Ireturn {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
+                int value = (int) frame.popOperandStack();
+                pc=frame.getReturnAddress();
+                myClass.popFrame();
+                frame = myClass.currentFrame();
+                frame.pushOperandStack(value);
+                Opcodes=methodArea.getClassMetadata(myClass.getName()).getMethods().get(frame.getCurrentMethodIndex());
+            }
+        },
+        Lreturn {
+            @Override
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Lreturn{
+        Freturn {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Freturn{
+        Dreturn {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Dreturn{
+        Areturn {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Areturn{
+        Return {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Return{
+        Getstatic {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Getstatic{
+        Putstatic {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Putstatic{
+        Getfield {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Getfield{
+        Putfield {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Putfield{
+        Invokevirtual {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Invokevirtual{
+        Invokespecial {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Invokespecial{
+        Invokestatic {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
+                int address_1=fetch();
+                int address_2=fetch();
+                int address = (address_1 << 8) + address_2 - 1;
+                Frame newFrame = new Frame(100,100);
+                newFrame.setReturnAddress(pc);
+                newFrame.setCurrentMethodIndex(address);
+                pc=0;
+                Opcodes=methodArea.getClassMetadata("Main").getMethods().get(address);
+                int argsNumber = methodArea.getClassMetadata("Main").getMethodArgsNumbers(address);
+                while(!frame.isStackEmpty()&&argsNumber>0){
+                    argsNumber--;
+                    newFrame.setLocal(argsNumber, frame.popOperandStack());
+                }
+                myClass.pushFrame(newFrame);
+                frame = myClass.currentFrame();
+            }
+        },
+        Invokeinterface {
+            @Override
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Invokestatic{
+        Invokedynamic {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Invokeinterface{
+        New {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Invokedynamic{
+        Newarray {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        New{
+        Anewarray {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Newarray{
+        Arraylength {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Anewarray{
+        Athrow {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Arraylength{
+        Checkcast {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Athrow{
+        Instanceof {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Checkcast{
+        Monitorenter {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Instanceof{
+        Monitorexit {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Monitorenter{
+        Wide {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Monitorexit{
+        Multianewarray {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Wide{
+        Ifnull {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Multianewarray{
+        Ifnonnull {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Ifnull{
+        Goto_w {
             @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         },
-        Ifnonnull{
+        Jsr_w {
             @Override
-            public void execute(@NotNull Frame frame){
-                //do nothing
-            }
-        },
-        Goto_w{
-            @Override
-            public void execute(@NotNull Frame frame){
-                //do nothing
-            }
-        },
-        Jsr_w{
-            @Override
-            public void execute(@NotNull Frame frame){
+            public void execute(@NotNull MyClass myClass) {
                 //do nothing
             }
         };
-    public abstract void execute(Frame frame);
+
+        public abstract void execute(MyClass myClass);
     }
 
 
     void eval(int opcode) {
         Instructions instruction = Instructions.values()[opcode];
-        instruction.execute(frame);
+        instruction.execute(myClass);
         System.out.println();
-        print=0;
+        print = 0;
     }
 
-    void run(){
+    void init(){
+        Map<Integer, int[]> methods = new HashMap<>();
+        frame.setCurrentMethodIndex(0);
+        int[] main={0x10, 0x0A, 0x3C, 0x1B, 0xB8, 0x00, 0x02, 0x3D, 0xB1};
+        main=Main_1;
+        methods.put(0, main);
+        int[] square = {0x10, 0x0A, 0x3C, 0x1A, 0x1A, 0x68, 0xAC};
+        methods.put(1, square);
+        int[] methodsArgsNumbers = new int[100];
+        methodsArgsNumbers[0]=0;
+        methodsArgsNumbers[1]=1;
+        methodArea.loadClass(methodArea.createClassMetadata(myClass.getName(), "java/lang/Object", new String[100], new HashMap<>(), methods, methodsArgsNumbers));
+        myClass.pushFrame(frame);
+        frame = myClass.currentFrame();
+        //在编译时，字面量和符号引用都会被存储到常量池中，但可以用short表示的常量不会被存储，因此实验1中只有454654646一个数值型常量被存储，
+        // 因为在这个常量前，还会有类名Main和方法名main被存储，所以454654646的序号是2
+        myClass.setConstant(2,454654646);
+        heap.addObject(myClass);
+        Opcodes=methodArea.getClassMetadata(myClass.getName()).getMethods().get(frame.getCurrentMethodIndex());
+    }
+
+    void run() {
+        init();
         while (pc < Opcodes.length) {
-            System.out.print(pc+" "+instructionNames[Opcodes[pc]]);
+            System.out.print(pc + " " + instructionNames[Opcodes[pc]]);
             eval(fetch());
+        }
+        System.out.println("local variables");
+        for(int i=0;i<frame.getLocalIndex();++i){
+            System.out.println(frame.getLocal(i));
         }
     }
 

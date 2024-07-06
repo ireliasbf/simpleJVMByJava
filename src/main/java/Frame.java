@@ -3,20 +3,30 @@ public class Frame {
     private int localIndex;
     private int operandStackIndex;
     private final Object[] operandStack;
-    private final Object[] constantPool; // 常量池
-    private int nextPc;
-    public Frame(int localSize, int operandStackSize, int constantPoolSize) {
+    private int returnAddress;
+    private int currentMethodIndex;
+
+    public Frame(int localSize, int operandStackSize) {
         this.locals = new Object[localSize];
         this.operandStack = new Object[operandStackSize];
-        this.constantPool = new Object[constantPoolSize]; // 初始化常量池
+        this.operandStackIndex = 0;
+    }
+
+    public int getLocalIndex() {
+        return localIndex;
     }
 
     public void setLocal(int index, Object value) {
         locals[index] = value;
+        localIndex=Math.max(localIndex,index+1);
     }
 
     public Object getLocal(int index) {
         return locals[index];
+    }
+
+    public Boolean isStackEmpty() {
+        return operandStackIndex == 0;
     }
 
     public void pushOperandStack(Object value) {
@@ -27,21 +37,19 @@ public class Frame {
         return operandStack[--operandStackIndex];
     }
 
-    // 设置常量池中的值
-    public void setConstant(int index, Object value) {
-        constantPool[index] = value;
+    public void setReturnAddress(int returnAddress) {
+        this.returnAddress = returnAddress;
     }
 
-    // 获取常量池中的值
-    public Object getConstant(int index) {
-        return constantPool[index];
+    public int getReturnAddress() {
+        return returnAddress;
     }
 
-    public void setNextPc(int nextPc) {
-        this.nextPc = nextPc;
+    public void setCurrentMethodIndex(int currentMethodIndex) {
+        this.currentMethodIndex = currentMethodIndex;
     }
 
-    public int getNextPc() {
-        return nextPc;
+    public int getCurrentMethodIndex() {
+        return currentMethodIndex;
     }
 }
