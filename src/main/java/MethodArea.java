@@ -1,4 +1,5 @@
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MethodArea {
@@ -8,12 +9,12 @@ public class MethodArea {
         this.classMetadataMap = new HashMap<>();
     }
 
-    public ClassMetadata createClassMetadata(String className, String superClassName, String[] interfaces, Map<String, String> fields, Map<Integer, int[]> methods, int[] methodsArgsNumbers){
-        return new ClassMetadata(className, superClassName, interfaces, fields, methods, methodsArgsNumbers);
+    public ClassMetadata createClassMetadata(String className, String superClassName, String[] interfaces,String[] constantPoolType,Object[] constantPool,String[] filedsName,Object[] fields, LinkedHashMap<String, Byte[]> methods, LinkedHashMap<String,Integer> methodsArgsNumbers){
+        return new ClassMetadata(className, superClassName, interfaces,constantPoolType,constantPool,filedsName,fields, methods, methodsArgsNumbers);
     }
 
     public void loadClass(ClassMetadata classMetadata) {
-        classMetadataMap.put(classMetadata.getClassName(), classMetadata);
+        this.classMetadataMap.put(classMetadata.getClassName(), classMetadata);
     }
 
     public ClassMetadata getClassMetadata(String className) {

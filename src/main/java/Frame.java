@@ -4,7 +4,7 @@ public class Frame {
     private int operandStackIndex;
     private final Object[] operandStack;
     private int returnAddress;
-    private int currentMethodIndex;
+    private String currentMethodIndex;
 
     public Frame(int localSize, int operandStackSize) {
         this.locals = new Object[localSize];
@@ -45,11 +45,11 @@ public class Frame {
         return returnAddress;
     }
 
-    public void setCurrentMethodIndex(int currentMethodIndex) {
+    public void setCurrentMethodIndex(String currentMethodIndex) {
         this.currentMethodIndex = currentMethodIndex;
     }
 
-    public int getCurrentMethodIndex() {
+    public String getCurrentMethodIndex() {
         return currentMethodIndex;
     }
 }

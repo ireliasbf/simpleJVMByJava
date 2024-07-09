@@ -1,8 +1,12 @@
 import org.jetbrains.annotations.NotNull;
 
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class JavaVirtualMachine {
     String[] instructionNames = {
@@ -30,18 +34,11 @@ public class JavaVirtualMachine {
     };
 
     static int pc = 0;
-    static int[] Main_1 = {0x10, 0x0A, 0x3C, 0x10, 0x14, 0x3D, 0x1B, 0x1C, 0x60, 0x3E, 0x1D, 0x10,
-            0x0A, 0xA1, 0x00, 0x0A, 0x10, 0x0A, 0x36, 0x08, 0xA7, 0x00, 0x07, 0x10, 0x0A,
-            0x36, 0x08, 0x1D, 0x9E, 0x00, 0x16, 0x10, 0x14, 0x36, 0x08, 0x1D, 0x04, 0x64,
-            0x3E, 0x1D, 0x08, 0xA0, 0x00, 0x06, 0xA7, 0x00, 0x06, 0xA7, 0xFF, 0xEC, 0x12,
-            0x02, 0x36, 0x05, 0x11, 0x03, 0xE8, 0x36, 0x06, 0xB1
-    };
-
-    static int[] Opcodes;
-    static Frame frame = new Frame(100, 100);
+    static Byte[] Opcodes;
+    static Frame frame;
     static MethodArea methodArea = new MethodArea();
     static Heap heap = new Heap(100);
-    static MyClass myClass = new MyClass("Main", 100, 100);
+    static MyClass myClass;
 
     static int print = 0;
 
@@ -56,15 +53,7 @@ public class JavaVirtualMachine {
     static int getOffset() {
         int bite_1 = fetch();
         int bite_2 = fetch();
-        int combined = (bite_1 << 8) | bite_2;
-
-        int offset;
-        if ((combined & 0x8000) != 0) { // 如果最高位（符号位）为1，表示这是一个负数
-            offset = combined - 0x10000; // 进行补码转换
-        } else {
-            offset = combined;
-        }
-        return offset;
+        return (bite_1 << 8) | bite_2;
     }
 
     public enum Instructions {
@@ -165,241 +154,261 @@ public class JavaVirtualMachine {
                 int bite_1 = fetch();
                 int bite_2 = fetch();
                 int combined = (bite_1 << 8) | bite_2;
-                frame.pushOperandStack(combined);
+                myClass.currentFrame().pushOperandStack(combined);
             }
         },
         Ldc {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                frame.pushOperandStack(myClass.getConstant(fetch()));
+                int index=fetch();
+                if(myClass.getConstantType(index).equals("Integer"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant(index));
+                else if(myClass.getConstantType(index).equals("Float"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant(index));
+                else if(myClass.getConstantType(index).equals("String"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant((int)myClass.getConstant(index)));
             }
         },
         Ldc_w {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                frame.pushOperandStack(myClass.getConstant(fetch()));
+                int index_1=fetch();
+                int index_2=fetch();
+                int index=(index_1<<8)|index_2;
+                if(myClass.getConstantType(index).equals("Integer"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant(index));
+                else if(myClass.getConstantType(index).equals("Float"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant(index));
+                else if(myClass.getConstantType(index).equals("String"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant((int)myClass.getConstant(index)));
             }
         },
         Ldc2_w {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(myClass.getConstant(fetch()));
+                int index_1=fetch();
+                int index_2=fetch();
+                int index=(index_1<<8)|index_2;
+                if(myClass.getConstantType(index).equals("Long"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant(index));
+                else if(myClass.getConstantType(index).equals("Double"))
+                    myClass.currentFrame().pushOperandStack(myClass.getConstant(index));
             }
         },
         Iload {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(fetch()));
             }
         },
         Lload {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(fetch()));
             }
         },
         Fload {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(fetch()));
             }
         },
         Dload {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(fetch()));
             }
         },
         Aload {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(fetch()));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(fetch()));
             }
         },
         Iload_0 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(0));
             }
         },
         Iload_1 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(1));
             }
         },
         Iload_2 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(2));
             }
         },
         Iload_3 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(3));
             }
         },
         Lload_0 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(0));
             }
         },
         Lload_1 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(1));
             }
         },
         Lload_2 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(2));
             }
         },
         Lload_3 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(3));
             }
         },
         Fload_0 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(0));
             }
         },
         Fload_1 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(1));
             }
         },
         Fload_2 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(2));
             }
         },
         Fload_3 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(3));
             }
         },
         Dload_0 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(0));
             }
         },
         Dload_1 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(1));
             }
         },
         Dload_2 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(2));
             }
         },
         Dload_3 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(3));
             }
         },
         Aload_0 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(0));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(0));
             }
         },
         Aload_1 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(1));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(1));
             }
         },
         Aload_2 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(2));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(2));
             }
         },
         Aload_3 {
             public void execute(@NotNull MyClass myClass) {
-                myClass.currentFrame().pushOperandStack(frame.getLocal(3));
+                myClass.currentFrame().pushOperandStack(myClass.currentFrame().getLocal(3));
             }
         },
         Iaload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                int[] array = (int[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                int[] array = (int[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Laload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                long[] array = (long[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                long[] array = (long[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Faload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                float[] array = (float[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                float[] array = (float[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Daload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                double[] array = (double[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                double[] array = (double[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Aaload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                Object[] array = (Object[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                Object[] array = (Object[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Baload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                byte[] array = (byte[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                byte[] array = (byte[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Caload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                char[] array = (char[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                char[] array = (char[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Saload {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                int index = (int) frame.popOperandStack();
-                short[] array = (short[]) frame.popOperandStack();
-                frame.pushOperandStack(array[index]);
+                int index = (int) myClass.currentFrame().popOperandStack();
+                short[] array = (short[]) myClass.currentFrame().popOperandStack();
+                myClass.currentFrame().pushOperandStack(array[index]);
             }
         },
         Istore {
             @Override
             public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
-                frame.setLocal(index, frame.popOperandStack());
+                myClass.currentFrame().setLocal(index, myClass.currentFrame().popOperandStack());
             }
         },
         Lstore {
             @Override
             public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
-                frame.setLocal(index, frame.popOperandStack());
+                myClass.currentFrame().setLocal(index, myClass.currentFrame().popOperandStack());
             }
         },
         Fstore {
             @Override
             public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
-                frame.setLocal(index, frame.popOperandStack());
+                myClass.currentFrame().setLocal(index, myClass.currentFrame().popOperandStack());
             }
         },
         Dstore {
             @Override
             public void execute(@NotNull MyClass myClass) {
                 int index = fetch();
-                frame.setLocal(index, frame.popOperandStack());
+                myClass.currentFrame().setLocal(index, frame.popOperandStack());
             }
         },
         Astore {
@@ -1312,11 +1321,7 @@ public class JavaVirtualMachine {
                     pairs.put(key, offset);
                 }
                 int key = (int) frame.popOperandStack();
-                if (pairs.containsKey(key)) {
-                    pc += pairs.get(key);
-                } else {
-                    pc += defaultOffset;
-                }
+                pc += pairs.getOrDefault(key, defaultOffset);
             }
         },
         Ireturn {
@@ -1327,7 +1332,7 @@ public class JavaVirtualMachine {
                 myClass.popFrame();
                 frame = myClass.currentFrame();
                 frame.pushOperandStack(value);
-                Opcodes=methodArea.getClassMetadata(myClass.getName()).getMethods().get(frame.getCurrentMethodIndex());
+                Opcodes=methodArea.getClassMetadata(myClass.getClassname()).getMethods().get(frame.getCurrentMethodIndex());
             }
         },
         Lreturn {
@@ -1357,7 +1362,15 @@ public class JavaVirtualMachine {
         Return {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                //do nothing
+                pc=frame.getReturnAddress();
+                if(myClass.sp>1)
+                    myClass.popFrame();
+                else{
+                    pc=Opcodes.length;
+                    return;
+                }
+                frame = myClass.currentFrame();
+                Opcodes=methodArea.getClassMetadata(myClass.getClassname()).getMethods().get(frame.getCurrentMethodIndex());
             }
         },
         Getstatic {
@@ -1381,19 +1394,88 @@ public class JavaVirtualMachine {
         Putfield {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                //do nothing
+                int address_1=fetch();
+                int address_2=fetch();
+                int address = (address_1 << 8) + address_2;
+                Object value = myClass.currentFrame().popOperandStack();
+                Object object = myClass.currentFrame().popOperandStack();
+                MyClass currentClass=(MyClass)myClass.currentFrame().getLocal(0);
+                int[] fieldRef=(int[])currentClass.getConstant(address);
+                int[] fieldNameAndTypeIndex=(int[])currentClass.getConstant(fieldRef[1]);
+                int fieldNameIndex=fieldNameAndTypeIndex[0];
+                String fieldName=currentClass.getConstant(fieldNameIndex).toString();
+                ((MyClass)object).setField(fieldName, value);
             }
         },
         Invokevirtual {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                //do nothing
+                int address_1=fetch();
+                int address_2=fetch();
+                int address = (address_1 << 8) + address_2;
+                int[] methodRef=(int[])myClass.getConstant(address);
+                int classRefIndex=methodRef[0];
+                int classNameIndex=(int)myClass.getConstant(classRefIndex);
+                String className=myClass.getConstant(classNameIndex).toString();
+                if(className.equals("java/lang/Object"))
+                    return;
+                ClassMetadata classMetadata = methodArea.getClassMetadata(className);
+                int methodNameAndTypeIndex=methodRef[1];
+                int[] methodNameAndType=(int[])myClass.getConstant(methodNameAndTypeIndex);
+                int methodNameIndex=methodNameAndType[0];
+                String methodName=myClass.getConstant(methodNameIndex).toString();
+                Frame newFrame = new Frame(100,100);
+                int argsCount=classMetadata.getMethodArgsNumbers(methodName);
+                while(argsCount>0){
+                    argsCount--;
+                    newFrame.setLocal(argsCount+1,myClass.currentFrame().popOperandStack());
+                }
+                MyClass newClass=(MyClass)myClass.currentFrame().popOperandStack();
+                newFrame.setLocal(0,newClass);
+                newFrame.setReturnAddress(pc);
+                newFrame.setCurrentMethodIndex(methodName);
+                pc=0;
+                Opcodes=classMetadata.getMethods().get(methodName);
+                int argsNumber = classMetadata.getMethodArgsNumbers(methodName);
+                while(!myClass.currentFrame().isStackEmpty()&&argsNumber>0){
+                    argsNumber--;
+                    newFrame.setLocal(argsNumber, myClass.currentFrame().popOperandStack());
+                }
+                myClass.pushFrame(newFrame);
+                frame = myClass.currentFrame();
             }
         },
         Invokespecial {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                //do nothing
+                int address_1=fetch();
+                int address_2=fetch();
+                int address = (address_1 << 8) + address_2;
+                int[] methodRef=(int[])myClass.getConstant(address);
+                int classRefIndex=methodRef[0];
+                int classNameIndex=(int)myClass.getConstant(classRefIndex);
+                String className=myClass.getConstant(classNameIndex).toString();
+                if(className.equals("java/lang/Object"))
+                    return;
+                ClassMetadata classMetadata = methodArea.getClassMetadata(className);
+                int methodNameAndTypeIndex=methodRef[1];
+                int[] methodNameAndType=(int[])myClass.getConstant(methodNameAndTypeIndex);
+                int methodNameIndex=methodNameAndType[0];
+                String methodName=myClass.getConstant(methodNameIndex).toString();
+                Frame newFrame = new Frame(100,100);
+                MyClass newClass=(MyClass)myClass.currentFrame().popOperandStack();
+                newFrame.setLocal(0,newClass);
+                newFrame.setReturnAddress(pc);
+                newFrame.setCurrentMethodIndex(methodName);
+                pc=0;
+                Opcodes=classMetadata.getMethods().get(methodName);
+                int argsNumber = classMetadata.getMethodArgsNumbers(methodName);
+                while(!myClass.currentFrame().isStackEmpty()&&argsNumber>0){
+                    argsNumber--;
+                    newFrame.setLocal(argsNumber, myClass.currentFrame().popOperandStack());
+                }
+                myClass.pushFrame(newFrame);
+                frame = myClass.currentFrame();
             }
         },
         Invokestatic {
@@ -1401,16 +1483,28 @@ public class JavaVirtualMachine {
             public void execute(@NotNull MyClass myClass) {
                 int address_1=fetch();
                 int address_2=fetch();
-                int address = (address_1 << 8) + address_2 - 1;
+                int address = (address_1 << 8) + address_2;
                 Frame newFrame = new Frame(100,100);
+                newFrame.setLocal(0,myClass);
                 newFrame.setReturnAddress(pc);
-                newFrame.setCurrentMethodIndex(address);
+                int[] methodRef=(int[])myClass.getConstant(address);
+                int classRefIndex=methodRef[0];
+                int classNameIndex=(int)myClass.getConstant(classRefIndex);
+                String className=myClass.getConstant(classNameIndex).toString();
+                if(className.equals("java/lang/Object"))
+                    return;
+                ClassMetadata classMetadata = methodArea.getClassMetadata(className);
+                int methodNameAndTypeIndex=methodRef[1];
+                int[] methodNameAndType=(int[])myClass.getConstant(methodNameAndTypeIndex);
+                int methodNameIndex=methodNameAndType[0];
+                String methodName=myClass.getConstant(methodNameIndex).toString();
+                newFrame.setCurrentMethodIndex(methodName);
                 pc=0;
-                Opcodes=methodArea.getClassMetadata("Main").getMethods().get(address);
-                int argsNumber = methodArea.getClassMetadata("Main").getMethodArgsNumbers(address);
-                while(!frame.isStackEmpty()&&argsNumber>0){
+                Opcodes=classMetadata.getMethods().get(methodName);
+                int argsNumber = classMetadata.getMethodArgsNumbers(methodName);
+                while(!myClass.currentFrame().isStackEmpty()&&argsNumber>0){
                     argsNumber--;
-                    newFrame.setLocal(argsNumber, frame.popOperandStack());
+                    newFrame.setLocal(argsNumber, myClass.currentFrame().popOperandStack());
                 }
                 myClass.pushFrame(newFrame);
                 frame = myClass.currentFrame();
@@ -1431,7 +1525,14 @@ public class JavaVirtualMachine {
         New {
             @Override
             public void execute(@NotNull MyClass myClass) {
-                //do nothing
+                int address_1=fetch();
+                int address_2=fetch();
+                int address = (address_1 << 8) + address_2;
+                int classNameIndex=(int)myClass.getConstant(address);
+                ClassMetadata classMetadata = methodArea.getClassMetadata(myClass.getConstant(classNameIndex).toString());
+                MyClass newClass = new MyClass(classMetadata.getClassName(),classMetadata.getConstantPoolType(),classMetadata.getConstantPool(),classMetadata.getFiledsName(),classMetadata.getFields(),100);
+                heap.addObject(newClass);
+                myClass.currentFrame().pushOperandStack(newClass);
             }
         },
         Newarray {
@@ -1524,48 +1625,360 @@ public class JavaVirtualMachine {
 
 
     void eval(int opcode) {
-        Instructions instruction = Instructions.values()[opcode];
+        Instructions instruction = Instructions.values()[opcode&0xff];
         instruction.execute(myClass);
         System.out.println();
         print = 0;
     }
 
-    void init(){
-        Map<Integer, int[]> methods = new HashMap<>();
-        frame.setCurrentMethodIndex(0);
-        int[] main={0x10, 0x0A, 0x3C, 0x1B, 0xB8, 0x00, 0x02, 0x3D, 0xB1};
-        main=Main_1;
-        methods.put(0, main);
-        int[] square = {0x10, 0x0A, 0x3C, 0x1A, 0x1A, 0x68, 0xAC};
-        methods.put(1, square);
-        int[] methodsArgsNumbers = new int[100];
-        methodsArgsNumbers[0]=0;
-        methodsArgsNumbers[1]=1;
-        methodArea.loadClass(methodArea.createClassMetadata(myClass.getName(), "java/lang/Object", new String[100], new HashMap<>(), methods, methodsArgsNumbers));
-        myClass.pushFrame(frame);
-        frame = myClass.currentFrame();
-        //在编译时，字面量和符号引用都会被存储到常量池中，但可以用short表示的常量不会被存储，因此实验1中只有454654646一个数值型常量被存储，
-        // 因为在这个常量前，还会有类名Main和方法名main被存储，所以454654646的序号是2
-        myClass.setConstant(2,454654646);
-        heap.addObject(myClass);
-        Opcodes=methodArea.getClassMetadata(myClass.getName()).getMethods().get(frame.getCurrentMethodIndex());
+    public static int getParameterCountFromDescriptor(String descriptor) {
+        int index = descriptor.indexOf(')');
+        String parameters = descriptor.substring(1, index);
+
+        int count = 0;
+        int i = 0;
+        while (i < parameters.length()) {
+            char c = parameters.charAt(i);
+            if (c == 'L') {
+                // 对于类类型，需要找到';'的位置
+                i = parameters.indexOf(';', i);
+            } else if (c == '[') {
+                // 对于数组类型，需要找到非'['的位置
+                while (parameters.charAt(i) == '[') {
+                    i++;
+                }
+                if (parameters.charAt(i) == 'L') {
+                    i = parameters.indexOf(';', i);
+                }
+            }
+            count++;
+            i++;
+        }
+        return count;
     }
 
-    void run() {
-        init();
-        while (pc < Opcodes.length) {
-            System.out.print(pc + " " + instructionNames[Opcodes[pc]]);
-            eval(fetch());
+    Boolean loadClass(byte[] classData){
+        //读取魔数
+        int cur=0;
+        int magic = ((classData[0] & 0xff) << 24) | ((classData[1] & 0xff) << 16) | ((classData[2] & 0xff) << 8) | (classData[3] & 0xff);
+        cur+=4;
+        if (magic != 0xCAFEBABE) {
+            System.out.println("Not a java class file");
+            return false;
         }
-        System.out.println("local variables");
-        for(int i=0;i<frame.getLocalIndex();++i){
-            System.out.println(frame.getLocal(i));
+        //读取次版本号
+        int minorVersion = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        //读取主版本号
+        int majorVersion = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        //读取常量池
+        int constantPoolCount = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        Object[] constantPool = new Object[constantPoolCount];
+        String[] constantPoolType = new String[constantPoolCount];
+        for (int i = 1; i < constantPoolCount; i++) {
+            int tag = classData[cur++] & 0xff;
+            switch (tag) {
+                case 1:
+                    constantPoolType[i] = "Utf8";
+                    int length = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    cur+=2;
+                    constantPool[i] = new String(classData, cur, length);
+                    cur+=length;
+                    break;
+                case 3:
+                    constantPoolType[i] = "Integer";
+                    int value = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = value;
+                    cur+=4;
+                    break;
+                case 4:
+                    constantPoolType[i] = "Float";
+                    int floatBits = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = Float.intBitsToFloat(floatBits);
+                    cur+=4;
+                    break;
+                case 5:
+                    constantPoolType[i] = "Long";
+                    long value1 = ((long) (classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    long value2 = ((long) (classData[cur + 4] & 0xff) << 24) | ((classData[cur + 5] & 0xff) << 16) | ((classData[cur + 6] & 0xff) << 8) | (classData[cur + 7] & 0xff);
+                    constantPool[i] = (value1 << 32) | value2;
+                    cur+=8;
+                    i++;
+                    break;
+                case 6:
+                    constantPoolType[i] = "Double";
+                    long longBits = ((long) (classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = Double.longBitsToDouble(longBits);
+                    cur+=2;
+                    break;
+                case 7:
+                    constantPoolType[i] = "Class";
+                    int index = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    cur+=2;
+                    constantPool[i] = index;
+                    break;
+                case 8:
+                    constantPoolType[i] = "String";
+                    int stringIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    constantPool[i] = stringIndex;
+                    cur+=2;
+                    break;
+                case 9:
+                    constantPoolType[i] = "Fieldref";
+                    int classIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    int nameAndTypeIndex = ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = new int[]{classIndex, nameAndTypeIndex};
+                    cur+=4;
+                    break;
+                case 10:
+                    constantPoolType[i] = "Methodref";
+                    int classIndex1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    int nameAndTypeIndex1 = ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = new int[]{classIndex1, nameAndTypeIndex1};
+                    cur+=4;
+                    break;
+                case 11:
+                    constantPoolType[i] = "InterfaceMethodref";
+                    int classIndex2 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    int nameAndTypeIndex2 = ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = new int[]{classIndex2, nameAndTypeIndex2};
+                    cur+=4;
+                    break;
+                case 12:
+                    constantPoolType[i] = "NameAndType";
+                    int nameIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    int descriptorIndex = ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = new int[]{nameIndex, descriptorIndex};
+                    cur+=4;
+                    break;
+                case 15:
+                    constantPoolType[i] = "MethodHandle";
+                    int referenceKind = classData[cur++] & 0xff;
+                    int referenceIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    constantPool[i] = new int[]{referenceKind, referenceIndex};
+                    cur+=3;
+                    break;
+                case 16:
+                    constantPoolType[i] = "MethodType";
+                    int descriptorIndex1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    constantPool[i] = descriptorIndex1;
+                    cur+=2;
+                    break;
+                case 18:
+                    constantPoolType[i] = "InvokeDynamic";
+                    int bootstrapMethodAttrIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    int nameAndTypeIndex3 = ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    constantPool[i] = new int[]{bootstrapMethodAttrIndex, nameAndTypeIndex3};
+                    cur+=4;
+                    break;
+                case 19:
+                    constantPoolType[i] = "Module";
+                    int moduleNameIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    constantPool[i] = moduleNameIndex;
+                    cur+=2;
+                    break;
+                case 20:
+                    constantPoolType[i] = "Package";
+                    int packageNameIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    constantPool[i] = packageNameIndex;
+                    cur+=2;
+                    break;
+                default:
+                    break;
+            }
+        }
+        //读取访问标志
+        int accessFlags = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        //读取类名
+        int thisClass = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        String className = constantPool[(int)constantPool[thisClass]].toString();
+        //读取父类名
+        int superClass = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        String superClassName;
+        if (superClass != 0) { // 对于Object类，没有父类
+            superClassName = constantPool[(int)constantPool[superClass]].toString();
+        } else {
+            superClassName = null;
+        }
+        //读取接口
+        int interfacesCount = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        String[] interfaces = new String[interfacesCount];
+        for (int i = 0; i < interfacesCount; i++) {
+            int index = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            interfaces[i] = constantPool[Integer.parseInt((String)constantPool[index])].toString();
+            cur+=2;
+        }
+        //读取字段
+        int fieldsCount = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        String[] fieldsName = new String[fieldsCount];
+        Object[] fields = new Object[fieldsCount];
+        cur+=2;
+        for (int i = 0; i < fieldsCount; i++) {
+            int accessFlags1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            cur+=2;
+            int nameIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            fieldsName[i] = constantPool[nameIndex].toString();
+            cur+=2;
+            int descriptorIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            cur+=2;
+            int attributesCount = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            cur+=2;
+            for (int j = 0; j < attributesCount; j++) {
+                int attributeNameIndex = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                cur+=2;
+                int attributesLength = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                cur+=4;
+                cur+=attributesLength;
+            }
+        }
+        //读取方法
+        int methodsCount = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        LinkedHashMap<String, Byte[]> methods = new LinkedHashMap<>();
+        LinkedHashMap<String,Integer> methodsArgsNumbers = new LinkedHashMap<>();
+        cur+=2;
+        for (int i = 0; i < methodsCount; i++) {
+            int accessFlags2 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            cur += 2;
+            int nameIndex1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            String methodName = constantPool[nameIndex1].toString();
+            cur += 2;
+            int descriptorIndex1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            String descriptor = constantPool[descriptorIndex1].toString();
+            int parameterCount = getParameterCountFromDescriptor(descriptor);
+            cur += 2;
+            int attributesCount1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            cur += 2;
+            Byte[] code = null;
+            for (int j = 0; j < attributesCount1; j++) {
+                int attributeNameIndex1 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                cur += 2;
+                int attributesLength1 = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                cur += 4;
+                if (constantPool[attributeNameIndex1].toString().equals("Code")) {
+                    int maxStack = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    cur += 2;
+                    int maxLocals = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    cur += 2;
+                    int codeLength = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                    cur += 4;
+                    code = new Byte[codeLength];
+                    for (int k = 0; k < codeLength; k++) {
+                        code[k] = classData[cur++];
+                    }
+                    int exceptionTableLength = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    cur += 2;
+                    for (int k = 0; k < exceptionTableLength; k++) {
+                        int startPc = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                        cur += 2;
+                        int endPc = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                        cur += 2;
+                        int handlerPc = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                        cur += 2;
+                        int catchType = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                        cur += 2;
+                    }
+                    int attributesCount2 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                    cur += 2;
+                    for (int k = 0; k < attributesCount2; k++) {
+                        int attributeNameIndex2 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+                        cur += 2;
+                        int attributesLength2 = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+                        cur += 4;
+                        cur += attributesLength2;
+                    }
+                }
+                else {
+                    cur += attributesLength1;
+                }
+            }
+            methods.put(methodName, code);
+            methodsArgsNumbers.put(methodName, parameterCount);
+        }
+        //读取属性
+        int attributesCount2 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+        cur+=2;
+        for (int i = 0; i < attributesCount2; i++) {
+            int attributeNameIndex3 = ((classData[cur] & 0xff) << 8) | (classData[cur + 1] & 0xff);
+            cur+=2;
+            int attributesLength3 = ((classData[cur] & 0xff) << 24) | ((classData[cur + 1] & 0xff) << 16) | ((classData[cur + 2] & 0xff) << 8) | (classData[cur + 3] & 0xff);
+            cur+=4;
+            cur+=attributesLength3;
+        }
+        //创建类元数据
+        methodArea.loadClass(methodArea.createClassMetadata(className, superClassName, interfaces,constantPoolType,constantPool,fieldsName,fields, methods, methodsArgsNumbers));
+        return true;
+    }
+
+    Boolean loadFile(String directoryPath){
+        //在指定路径下搜索class文件
+        List<Exception> exceptions = new ArrayList<>();
+        try{
+            Stream<Path> paths = Files.walk(Paths.get(directoryPath));
+            paths.filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".class")).forEach(path -> {
+                try {
+                    System.out.println(path);
+                    byte[] fileContent = Files.readAllBytes(path); // 读取文件内容
+                    for(int i=0;i<fileContent.length;++i){
+                        if(fileContent[i]==-1){
+                            fileContent[i]=0x00;
+                        }
+                    }
+                    if(!loadClass(fileContent)){
+                        exceptions.add(new Exception("Failed to load class from file: " + path));
+                    }
+                } catch (IOException e) {
+                    exceptions.add(e);
+                }
+            });
+        } catch (IOException e) {
+            exceptions.add(e);
+        }
+        exceptions.forEach(Exception::printStackTrace);
+        return exceptions.isEmpty();
+    }
+
+    void run(String directoryPath) {
+        if(!loadFile(directoryPath)) {
+            System.out.println("Failed to load class files");
+            return;
+        }
+        ClassMetadata mainClass= methodArea.getClassMetadata("Main");
+        myClass=new MyClass(mainClass.getClassName(),mainClass.getConstantPoolType(),mainClass.getConstantPool(),mainClass.getFiledsName(),mainClass.getFields(),100);
+        frame=new Frame(100,100);
+        frame.setCurrentMethodIndex("main");
+        frame.setLocal(0,myClass);
+        myClass.pushFrame(frame);
+        heap.addObject(myClass);
+        Opcodes=mainClass.getMethods().get(frame.getCurrentMethodIndex());
+        while (pc < Opcodes.length) {
+            int instruction = Opcodes[pc]&(0xff);
+            System.out.print(pc + " " + instructionNames[instruction]);
+            if(instructionNames[instruction].contains("return")||instructionNames[instruction].contains("Return")){
+                System.out.println("\nlocal variables");
+                for(int i=0;i<frame.getLocalIndex();++i){
+                    System.out.println(frame.getLocal(i));
+                }
+            }
+            eval(fetch());
         }
     }
 
     public static void main(String[] args) {
         JavaVirtualMachine jvm = new JavaVirtualMachine();
-        jvm.run();
+        String[] directoryPaths = new String[3];
+        directoryPaths[0]="C:\\Users\\HP\\IdeaProjects\\jvm_experiment_1\\target\\classes\\"; //实验1路径
+        directoryPaths[1] = "C:\\Users\\HP\\IdeaProjects\\jvm_experiment_2\\target\\classes\\"; //实验2路径
+        directoryPaths[2] = "C:\\Users\\HP\\IdeaProjects\\jvm_experiment_3\\target\\classes\\"; //实验3路径
+        System.out.println("请输入想要进行的实验编号：");
+        Scanner scanner = new Scanner(System.in);
+        int experimentNumber = scanner.nextInt();
+        jvm.run(directoryPaths[experimentNumber-1]);
     }
 }
 
